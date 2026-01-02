@@ -41,11 +41,6 @@ try {
     // Begin transaction
     $pdo->beginTransaction();
 
-    if (str_starts_with($account['password'], '$2y$')) {
-        throw new Exception("Hashed passwords are not allowed for product accounts");
-    }
-
-
     // Insert product
     $stmtProduct = $pdo->prepare("
         INSERT INTO products 
