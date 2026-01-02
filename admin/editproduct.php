@@ -76,7 +76,7 @@ try {
         $stmtInsertAccount->execute([
             ':product_id' => $productId,
             ':username' => $account['username'],
-            ':password' => password_hash($account['password'], PASSWORD_DEFAULT),
+            ':password' => encryptPassword($account['password']),
             ':status' => isset($account['status']) ? $account['status'] : 'Active'
         ]);
 

@@ -42,6 +42,79 @@ if (!defined('SECRET_IV'))
 if (!defined('ENCRYPT_METHOD'))
     define('ENCRYPT_METHOD', 'AES-256-CBC'); // encryption method
 
+// Paystack configuration
+if (!defined('PAYSTACK_SECRET_KEY'))
+    define('PAYSTACK_SECRET_KEY', 'sk_test_a11875e17b4146b173ee6aee33aaef269ab6ffb9');
+if (!defined('PAYSTACK_PUBLIC_KEY'))
+    define('PAYSTACK_PUBLIC_KEY', 'pk_test_YOUR_PUBLIC_KEY'); // You'll need to add your public key
+if (!defined('PAYSTACK_API_URL'))
+    define('PAYSTACK_API_URL', 'https://api.paystack.co');
+
+// Paystack helper function
+function initializePaystackPayment($email, $amount, $reference, $options = []) {
+    $url = PAYSTACK_API_URL . "/transaction/initialize";
+    
+    $fields = [
+        'email' => $email,
+        'amount' => $amount * 100, // Convert to kobo (smallest currency unit)
+        'reference' => $reference,
+    ];
+
+    // Add callback_url if provided
+    if (isset($options['callback_url']) && !empty($options['callback_url'])) {
+        $fields['callback_url'] = $options['callback_url'];
+    }
+
+    // Add metadata if provided
+    if (isset($options['metadata']) && is_array($options['metadata'])) {
+        $fields['metadata'] = $options['metadata'];
+    }
+
+    $fields_string = http_build_query($fields);
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "Authorization: Bearer " . PAYSTACK_SECRET_KEY,
+        "Cache-Control: no-cache",
+    ));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $result = curl_exec($ch);
+    $err = curl_error($ch);
+    curl_close($ch);
+    
+    if ($err) {
+        return ['success' => false, 'error' => $err];
+    }
+    
+    return json_decode($result, true);
+}
+
+function verifyPaystackPayment($reference) {
+    $url = PAYSTACK_API_URL . "/transaction/verify/" . $reference;
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        "Authorization: Bearer " . PAYSTACK_SECRET_KEY,
+        "Cache-Control: no-cache",
+    ));
+    
+    $result = curl_exec($ch);
+    $err = curl_error($ch);
+    curl_close($ch);
+    
+    if ($err) {
+        return ['success' => false, 'error' => $err];
+    }
+    
+    return json_decode($result, true);
+}
+
 function addLog(string $message, string $type = 'INFO', array $context = null)
 {
     global $pdo;
